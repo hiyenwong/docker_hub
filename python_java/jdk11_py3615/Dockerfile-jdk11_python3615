@@ -2,7 +2,7 @@
 # OpenJDK Runtime Environment 18.9
 # OpenJDK 64-Bit Server VM 18.9
 
-FROM jenkins/jenkins:2.291-centos7
+FROM  openjdk:11-jdk
 
 
 #python
