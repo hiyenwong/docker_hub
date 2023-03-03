@@ -1,0 +1,11 @@
+version: '2'
+services:
+  nexus:
+    image: sonatype/nexus3
+    container_name: "nexus3"
+    ports:
+      - "80:80"
+    environment:
+      - "JAVA_OPTS=-server -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT+08"
+    volumes:
+      - /Users/hiyenwong/Dockers/nexus/nexus-data:/nexus-data

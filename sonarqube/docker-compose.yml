@@ -1,0 +1,37 @@
+version: "3"
+services: 
+  sonarqube:
+    image: hyanwang/sonarqube-arm:9
+    hostname: sonarqube
+    container_name: sonarqube
+    depends_on:
+      - db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/Users/hiyenwong/Dockers/sonarqube/app/data
+      - sonarqube_extensions:/Users/hiyenwong/Dockers/sonarqube/app/extensions
+      - sonarqube_logs:/Users/hiyenwong/Dockers/sonarqube/app/logs
+    ports: 
+      - "9000:9000"
+  db:
+    image: postgres:12
+    hostname: postgresql
+    container_name: postgresql
+    environment: 
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - postgresql:/Users/hiyenwong/Dockers/sonarqube/postgresql
+      - postgresql_data:/Users/hiyenwong/Dockers/sonarqube/postgresql/data
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  postgresql:
+  postgresql_data:
+
