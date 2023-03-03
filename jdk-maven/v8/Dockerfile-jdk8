@@ -1,0 +1,39 @@
+
+FROM openjdk:8-jdk
+
+
+# ensure local python is preferred over distribution python
+ENV PATH /usr/local/bin:$PATH
+
+# http://bugs.python.org/issue19846
+# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
+ENV LANG C.UTF-8
+
+# extra dependencies (over what buildpack-deps already includes)
+
+ADD sources.list /etc/apt/
+
+RUN apt-get update
+RUN apt-get install --assume-yes apt-utils wget 
+RUN apt-get install -y apt-transport-https ca-certificates
+RUN apt-get install -y build-essential
+RUN apt-get install -y libsasl2-dev  libsasl2-modules libsasl2-dev
+RUN apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev 
+
+RUN  apt-get install -y --no-install-recommends \
+		libbluetooth-dev \
+		tk-dev \
+		uuid-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+ADD sources.list /etc/apt/
+ADD java.security /usr/local/openjdk-8/conf/security/
+
+# maven 3.8.6
+
+RUN wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+RUN tar xzvf apache-maven-3.8.6-bin.tar.gz
+RUN cp -R apache-maven-3.8.6 /usr/local/bin
+RUN export PATH=apache-maven-3.8.6/bin:$PATH
+RUN export PATH=/usr/local/bin/apache-maven-3.8.6/bin:$PATH
+RUN ln -s /usr/local/bin/apache-maven-3.8.6/bin/mvn /usr/local/bin/mvn    
