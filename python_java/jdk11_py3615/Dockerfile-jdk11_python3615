@@ -31,6 +31,7 @@ RUN apt-get install -y build-essential
 RUN apt-get install -y libsasl2-dev  libsasl2-modules libsasl2-dev
 RUN apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev
 RUN git config --global http.sslVerify false
+
 RUN git config --global https.sslVerify false
 RUN update-ca-certificates
 

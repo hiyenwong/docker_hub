@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM hyanwang/jdk-maven:v8
+FROM hyanwang/jdk:8
 
 
 
@@ -65,7 +65,7 @@ RUN mkdir bin; \
     
 RUN rm -rf /root/.m2/repository/*
 RUN rm -rf /usr/share/maven
-RUN yum remove wget unzip openssl -y
+
 
 RUN chown -R ${uid}:${gid} ${ROCKETMQ_DASHBOARD_HOME}
 EXPOSE 8080
