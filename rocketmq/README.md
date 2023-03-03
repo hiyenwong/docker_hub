@@ -3,7 +3,7 @@
 
 ## building rocket mq image
 ```shell
-docker build --no-cache -f Dockerfile-centos -t 10.110.91.244:8000/apache/rocketmq:5.1.0 --build-arg version=5.1.0 .```
+docker build --no-cache -f Dockerfile-rocketmq -t hyanwang/rocketmq:5.1.0 --build-arg version=5.1.0 .```
 
 ```
 # Rocket MQ Dashboard
