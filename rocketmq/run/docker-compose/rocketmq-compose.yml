@@ -46,3 +46,11 @@ services:
       - ./data1/broker/store:/home/rocketmq/store
       - ./data1/broker/conf/broker.conf:/opt/rocketmq-5.1.0/conf/broker.conf
     command: sh mqbroker -c /opt/rocketmq-5.1.0/conf/broker.conf
+
+  dashboard:
+    image: hyanwang/rocketmq-dashboard:1.0.0
+    container_name: rmqdashboard
+    links:
+      - namesrv
+    ports:
+      - 6765:8080
