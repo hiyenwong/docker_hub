@@ -1,8 +1,8 @@
 {
 	"dataVersion":{
-		"counter":5,
+		"counter":32,
 		"stateVersion":0,
-		"timestamp":1677903805772
+		"timestamp":1688698645010
 	},
 	"topicConfigTable":{
 		"SCHEDULE_TOPIC_XXXX":{
@@ -55,6 +55,16 @@
 			"topicSysFlag":0,
 			"writeQueueNums":8
 		},
+		"%RETRY%at-ramsay-group":{
+			"attributes":{},
+			"order":false,
+			"perm":6,
+			"readQueueNums":1,
+			"topicFilterType":"SINGLE_TAG",
+			"topicName":"%RETRY%at-ramsay-group",
+			"topicSysFlag":0,
+			"writeQueueNums":1
+		},
 		"RMQ_SYS_TRANS_HALF_TOPIC":{
 			"attributes":{},
 			"order":false,
@@ -85,6 +95,16 @@
 			"topicSysFlag":0,
 			"writeQueueNums":1
 		},
+		"%RETRY%test-group":{
+			"attributes":{},
+			"order":false,
+			"perm":6,
+			"readQueueNums":1,
+			"topicFilterType":"SINGLE_TAG",
+			"topicName":"%RETRY%test-group",
+			"topicSysFlag":0,
+			"writeQueueNums":1
+		},
 		"RMQ_SYS_TRANS_OP_HALF_TOPIC":{
 			"attributes":{},
 			"order":false,
@@ -94,6 +114,16 @@
 			"topicName":"RMQ_SYS_TRANS_OP_HALF_TOPIC",
 			"topicSysFlag":0,
 			"writeQueueNums":1
+		},
+		"at-ramsey-topic":{
+			"attributes":{},
+			"order":false,
+			"perm":6,
+			"readQueueNums":4,
+			"topicFilterType":"SINGLE_TAG",
+			"topicName":"at-ramsey-topic",
+			"topicSysFlag":0,
+			"writeQueueNums":4
 		},
 		"TBW102":{
 			"attributes":{},
@@ -114,6 +144,16 @@
 			"topicName":"BenchmarkTest",
 			"topicSysFlag":0,
 			"writeQueueNums":1024
+		},
+		"%RETRY%at-ramsay-group-retry":{
+			"attributes":{},
+			"order":false,
+			"perm":6,
+			"readQueueNums":1,
+			"topicFilterType":"SINGLE_TAG",
+			"topicName":"%RETRY%at-ramsay-group-retry",
+			"topicSysFlag":0,
+			"writeQueueNums":1
 		},
 		"OFFSET_MOVED_EVENT":{
 			"attributes":{},
