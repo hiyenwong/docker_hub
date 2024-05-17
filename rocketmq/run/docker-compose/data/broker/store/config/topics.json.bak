@@ -1,8 +1,8 @@
 {
 	"dataVersion":{
-		"counter":31,
+		"counter":32,
 		"stateVersion":0,
-		"timestamp":1688046797734
+		"timestamp":1688698645010
 	},
 	"topicConfigTable":{
 		"SCHEDULE_TOPIC_XXXX":{
