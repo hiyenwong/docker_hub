@@ -1,0 +1,8 @@
+FROM node:lts-bullseye
+RUN npm config set registry https://registry.npmmirror.com
+#RUN npm install -g yarn
+RUN npm install -g pnpm
+RUN npm config set strict-ssl false
+RUN npm install @remix-run/node @remix-run/react isbot@4 react react-dom vite @remix-run/express cross-env pm2 -g
+
+
