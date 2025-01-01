@@ -1,9 +1,8 @@
-version: '2'
 name: rocket_mq_server
 services:
   #Service for nameserver
   namesrv:
-    image: hyanwang/rocketmq:5.3.0
+    image: hyanwang/rocketmq:5.3.1.1
     container_name: rmqnamesrv
     ports:
       - 9876:9876
@@ -13,7 +12,7 @@ services:
 
   #Service for broker
   broker:
-    image: hyanwang/rocketmq:5.3.0
+    image: hyanwang/rocketmq:5.3.1.1
     container_name: rmqbroker
     links:
       - namesrv
@@ -26,8 +25,8 @@ services:
     volumes:
       - ./data/broker/logs:/home/rocketmq/logs
       - ./data/broker/store:/home/rocketmq/store
-      - ./data/broker/conf/broker.conf:/opt/rocketmq-5.3.0/conf/broker.conf
-    command: sh mqbroker -c /opt/rocketmq-5.3.0/conf/broker.conf
+      - ./data/broker/conf/broker.conf:/opt/rocketmq-5.3.1/conf/broker.conf
+    command: sh mqbroker -c /opt/rocketmq-5.3.1/conf/broker.conf
 
   #Service for another broker -- broker1
   # broker1:

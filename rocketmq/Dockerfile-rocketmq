@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM hyanwang/jdk:21
+FROM hyanwang/jdk:8
 
 ARG user=rocketmq
 ARG group=rocketmq
