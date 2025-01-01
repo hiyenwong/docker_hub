@@ -2,7 +2,7 @@ name: rocket_mq_server
 services:
   #Service for nameserver
   namesrv:
-    image: hyanwang/rocketmq:5.3.1.1
+    image: hyanwang/rocketmq:5.3.1.4
     container_name: rmqnamesrv
     ports:
       - 9876:9876
@@ -12,7 +12,7 @@ services:
 
   #Service for broker
   broker:
-    image: hyanwang/rocketmq:5.3.1.1
+    image: hyanwang/rocketmq:5.3.1.4
     container_name: rmqbroker
     links:
       - namesrv
