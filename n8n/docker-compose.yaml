@@ -1,0 +1,35 @@
+services:
+  n8n:
+    # 镜像地址
+    image: dockerproxy.net/n8nio/n8n:latest
+
+    # 容器名称，对应 --name n8n
+    container_name: n8n
+
+    # 推荐添加：除非手动停止，否则容器总是在退出后重启
+    restart: unless-stopped
+
+    # 端口映射，对应 -p 5678:5678
+    ports:
+      - "5678:5678"
+
+    # 环境变量，对应所有 -e 参数
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE={DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_HOST={DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT={DB_POSTGRESDB_PORT}
+      - DB_POSTGRESDB_USER={DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_SCHEMA={DB_POSTGRESDB_SCHEMA}
+      - DB_POSTGRESDB_PASSWORD={DB_POSTGRESDB_PASSWORD}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_SECURE_COOKIE=false
+
+    # 数据卷挂载，对应 -v n8n_data:/home/node/.n8n
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+# 在此处声明数据卷，以便 Docker 管理
+volumes:
+  n8n_data:
+    driver: local
