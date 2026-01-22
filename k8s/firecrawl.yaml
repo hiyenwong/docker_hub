@@ -1,0 +1,380 @@
+# =============================================================================
+# Firecrawl Kubernetes All-in-One Deployment
+# 命名空间: qa (可根据需要修改)
+# =============================================================================
+
+---
+# =============================================================================
+# 1. ConfigMap - 配置信息
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: firecrawl-config
+  namespace: qa
+data:
+  HOST: "0.0.0.0"
+  REDIS_URL: "redis://ircloud-redis-svc:6379/5"
+  REDIS_RATE_LIMIT_URL: "redis://ircloud-redis-svc:6379/5"
+  PLAYWRIGHT_MICROSERVICE_URL: "http://firecrawl-playwright-svc:3000/scrape"
+  USE_DB_AUTHENTICATION: "false"
+  SENTRY_ENVIRONMENT: "production"
+  ENV: "production"
+  LOGGING_LEVEL: "DEBUG"
+  IS_KUBERNETES: "true"
+  NUQ_DATABASE_URL: "postgresql://postgres:firecrawl123@nuq-postgres:5432/postgres"
+  # 如需配置 LLM 提取功能，取消以下注释并填入正确值
+  # OPENAI_BASE_URL: "https://open.bigmodel.cn/api/paas/v4"
+  # MODEL_NAME: "glm-4-flash"
+
+---
+# =============================================================================
+# 2. Secret - 敏感信息
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: firecrawl-secret
+  namespace: qa
+type: Opaque
+stringData:
+  OPENAI_API_KEY: ""
+  SLACK_WEBHOOK_URL: ""
+  LLAMAPARSE_API_KEY: ""
+  BULL_AUTH_KEY: ""
+  TEST_API_KEY: ""
+  FIRE_ENGINE_BETA_URL: ""
+
+---
+# =============================================================================
+# 3. Playwright Service - 浏览器渲染服务
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: playwright-service-config
+  namespace: qa
+data:
+  PORT: "3000"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firecrawl-playwright
+  namespace: qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: firecrawl-playwright
+  template:
+    metadata:
+      labels:
+        app: firecrawl-playwright
+    spec:
+      containers:
+        - name: playwright-service
+          image: ghcr.io/firecrawl/playwright-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: playwright-service-config
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firecrawl-playwright-svc
+  namespace: qa
+spec:
+  selector:
+    app: firecrawl-playwright
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+
+---
+# =============================================================================
+# 4. NUQ PostgreSQL - 队列数据库
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nuq-postgres
+  namespace: qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nuq-postgres
+  template:
+    metadata:
+      labels:
+        app: nuq-postgres
+    spec:
+      containers:
+        - name: nuq-postgres
+          image: ghcr.io/firecrawl/nuq-postgres:latest
+          imagePullPolicy: Always
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "firecrawl123"
+            - name: POSTGRES_DB
+              value: "postgres"
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nuq-postgres
+  namespace: qa
+spec:
+  selector:
+    app: nuq-postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
+
+---
+# =============================================================================
+# 5. Firecrawl API - 主服务
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firecrawl-api
+  namespace: qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: firecrawl-api
+  template:
+    metadata:
+      labels:
+        app: firecrawl-api
+    spec:
+      terminationGracePeriodSeconds: 180
+      containers:
+        - name: api
+          image: ghcr.io/firecrawl/firecrawl:latest
+          imagePullPolicy: Always
+          command: [ "node" ]
+          args: [ "--max-old-space-size=6144", "dist/src/index.js" ]
+          ports:
+            - containerPort: 3002
+          env:
+            - name: FLY_PROCESS_GROUP
+              value: "app"
+            - name: PORT
+              value: "3002"
+          envFrom:
+            - configMapRef:
+                name: firecrawl-config
+            - secretRef:
+                name: firecrawl-secret
+          resources:
+            requests:
+              memory: "4G"
+              cpu: "2000m"
+            limits:
+              memory: "6G"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /v0/health/liveness
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /v0/health/readiness
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firecrawl-api-svc
+  namespace: qa
+spec:
+  selector:
+    app: firecrawl-api
+  ports:
+    - protocol: TCP
+      port: 3002
+      targetPort: 3002
+
+---
+# =============================================================================
+# 6. Firecrawl Worker - 任务处理器
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firecrawl-worker
+  namespace: qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: firecrawl-worker
+  template:
+    metadata:
+      labels:
+        app: firecrawl-worker
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: worker
+          image: ghcr.io/firecrawl/firecrawl:latest
+          imagePullPolicy: Always
+          command: [ "node" ]
+          args: [ "--max-old-space-size=3072", "dist/src/services/queue-worker.js" ]
+          env:
+            - name: FLY_PROCESS_GROUP
+              value: "worker"
+            - name: PORT
+              value: "3005"
+          envFrom:
+            - configMapRef:
+                name: firecrawl-config
+            - secretRef:
+                name: firecrawl-secret
+          resources:
+            requests:
+              memory: "3G"
+              cpu: "1000m"
+            limits:
+              memory: "4G"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 3005
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+---
+# =============================================================================
+# 7. Firecrawl NUQ Worker - 队列处理器
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firecrawl-nuq-worker
+  namespace: qa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: firecrawl-nuq-worker
+  template:
+    metadata:
+      labels:
+        app: firecrawl-nuq-worker
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: nuq-worker
+          image: ghcr.io/firecrawl/firecrawl:latest
+          imagePullPolicy: Always
+          command: [ "node" ]
+          args: [ "--max-old-space-size=3072", "dist/src/services/worker/nuq-worker.js" ]
+          env:
+            - name: FLY_PROCESS_GROUP
+              value: "nuq-worker"
+            - name: NUQ_WORKER_PORT
+              value: "3006"
+          envFrom:
+            - configMapRef:
+                name: firecrawl-config
+            - secretRef:
+                name: firecrawl-secret
+          resources:
+            requests:
+              memory: "3G"
+              cpu: "1000m"
+            limits:
+              memory: "4G"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3006
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3006
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+---
+# =============================================================================
+# 8. Ingress - 外部访问 (Traefik)
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: firecrawl-api-ingress
+  namespace: qa
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+spec:
+  rules:
+    - host: qa.irs01.cn
+      http:
+        paths:
+          - path: /firecrawl
+            pathType: Prefix
+            backend:
+              service:
+                name: firecrawl-api-svc
+                port:
+                  number: 3002
