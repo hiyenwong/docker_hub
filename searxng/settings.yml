@@ -1,0 +1,20 @@
+# SearXNG settings
+# See docs for full options. This file is mounted into the container.
+use_default_settings: true
+
+general:
+  instance_name: "SearXNG"
+
+server:
+  # These are overridden by SEARXNG_SECRET and SEARXNG_BASE_URL in .env
+  secret_key: "change-me-please"
+  base_url: "http://localhost:8080"
+
+  # Access control style knobs
+  public_instance: false
+  limiter: true
+  image_proxy: true
+
+# Rate limiting backend (overridden by SEARXNG_VALKEY_URL)
+valkey:
+  url: "valkey://valkey:6379/0"

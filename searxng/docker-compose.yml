@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    env_file:
+      - .env
+    environment:
+      SEARXNG_SETTINGS_PATH: /etc/searxng/settings.yml
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:ro
+    depends_on:
+      - valkey
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:7
+    container_name: searxng-valkey
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey-data:/data
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: searxng-nginx
+    env_file:
+      - .env
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+      - ./nginx/allowlist.conf:/etc/nginx/allowlist.conf:ro
+    depends_on:
+      - searxng
+    restart: unless-stopped
+
+volumes:
+  valkey-data:

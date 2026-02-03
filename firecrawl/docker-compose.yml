@@ -1,0 +1,82 @@
+services:
+  # --- 新增 RabbitMQ 服务 ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: firecrawl-rabbitmq
+    restart: always
+    expose:
+      - "5672"
+      - "15672"
+
+  playwright-service:
+    image: ghcr.io/firecrawl/playwright-service:latest
+    container_name: firecrawl-playwright
+    expose:
+      - "3000"
+    restart: always
+    environment:
+      - PORT=3000
+
+  redis:
+    image: redis:7-alpine
+    container_name: firecrawl-redis
+    expose:
+      - "6379"
+    restart: always
+
+  postgres:
+    image: ghcr.io/firecrawl/nuq-postgres:latest
+    container_name: firecrawl-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=firecrawl123
+      - POSTGRES_DB=postgres
+    expose:
+      - "5432"
+    restart: always
+
+  api:
+    image: ghcr.io/firecrawl/firecrawl:latest
+    container_name: firecrawl-api
+    ports:
+      - "3002:3002"
+    depends_on:
+      - redis
+      - postgres
+      - playwright-service
+      - rabbitmq # 依赖 rabbitmq
+    restart: always
+    environment:
+      - PORT=3002
+      - HOST=0.0.0.0
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_RATE_LIMIT_URL=redis://redis:6379/0
+      - NUQ_DATABASE_URL=postgresql://postgres:firecrawl123@postgres:5432/postgres
+      # ⬇️ 关键：明确指向 rabbitmq 服务，防止它去搜宿主机的 docker
+      - NUQ_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - USE_DB_AUTHENTICATION=false
+      - ENABLE_FIRE_ENGINE=true
+      - PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
+      - FIRE_ENGINE_BETA_URL=http://playwright-service:3000/scrape
+      - SELF_HOSTED=true
+
+  worker:
+    image: ghcr.io/firecrawl/firecrawl:latest
+    container_name: firecrawl-worker
+    command: ["node", "dist/src/services/queue-worker.js"]
+    depends_on:
+      - redis
+      - postgres
+      - playwright-service
+      - rabbitmq
+    restart: always
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_RATE_LIMIT_URL=redis://redis:6379/0
+      - NUQ_DATABASE_URL=postgresql://postgres:firecrawl123@postgres:5432/postgres
+      # ⬇️ 关键：Worker 也需要设置
+      - NUQ_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - ENABLE_FIRE_ENGINE=true
+      - PLAYWRIGHT_MICROSERVICE_URL=http://playwright-service:3000/scrape
+      - FIRE_ENGINE_BETA_URL=http://playwright-service:3000
+      - SELF_HOSTED=true
