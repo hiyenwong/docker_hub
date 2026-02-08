@@ -1,0 +1,10 @@
+[global]
+server_name = "example.com"        # 👉 换成你的域名或 IP
+database_path = "/data/continuwuity.db"
+allow_registration = true
+allow_federation = false           # 内部用，先关
+log = "info"
+
+[network]
+address = "0.0.0.0"
+port = 6167

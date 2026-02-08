@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  continuwuity:
+    image: ghcr.io/continuwuity/continuwuity:latest
+    container_name: continuwuity
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+      - ./continuwuity.toml:/etc/continuwuity/continuwuity.toml
+    ports:
+      - "6167:6167"
